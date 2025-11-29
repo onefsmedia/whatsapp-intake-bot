@@ -34,4 +34,4 @@ RUN SECRET_KEY=build-secret python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Run startup script
-CMD ["./start.sh"]
+CMD ["sh", "start.sh"]
