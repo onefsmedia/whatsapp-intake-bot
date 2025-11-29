@@ -1,0 +1,76 @@
+services:
+  # ============================================
+  # Django Application
+  # ============================================
+  web:
+    build: .
+    container_name: whatsapp_bot_web
+    restart: unless-stopped
+    ports:
+      - "90:8000"
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=postgres://whatsapp:whatsapp123@db:5432/whatsapp_bot
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - static_volume:/app/staticfiles
+    networks:
+      - whatsapp_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  db:
+    image: postgres:15-alpine
+    container_name: whatsapp_bot_db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=whatsapp_bot
+      - POSTGRES_USER=whatsapp
+      - POSTGRES_PASSWORD=whatsapp123
+    networks:
+      - whatsapp_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whatsapp -d whatsapp_bot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Nginx Reverse Proxy (Production)
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: whatsapp_bot_nginx
+    restart: unless-stopped
+    ports:
+      - "9090:80"
+      - "9443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - static_volume:/app/staticfiles:ro
+    depends_on:
+      - web
+    networks:
+      - whatsapp_network
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks:
+  whatsapp_network:
+    driver: bridge

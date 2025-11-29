@@ -1,0 +1,17 @@
+# Simple docker-compose for local development
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: whatsapp_bot_dev
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key-not-for-production
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    command: python manage.py runserver 0.0.0.0:8000
