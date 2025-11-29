@@ -5,6 +5,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+ENV PORT=8000
 
 # Set work directory
 WORKDIR /app
@@ -23,19 +24,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
+# Make start script executable
+RUN chmod +x start.sh
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Collect static files (with dummy secret for build)
+RUN SECRET_KEY=build-secret python manage.py collectstatic --noinput
 
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health/ || exit 1
-
-# Run with Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
+# Run startup script
+CMD ["./start.sh"]
