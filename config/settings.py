@@ -72,10 +72,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
-# Use DATABASE_URL if available (Railway, Heroku, etc.)
+# Use DATABASE_PUBLIC_URL or DATABASE_URL if available (Railway, Heroku, etc.)
 import dj_database_url
 
-DATABASE_URL = config('DATABASE_URL', default='')
+# Prefer public URL for Railway (more reliable than internal networking)
+DATABASE_URL = config('DATABASE_PUBLIC_URL', default='') or config('DATABASE_URL', default='')
 
 if DATABASE_URL:
     DATABASES = {
